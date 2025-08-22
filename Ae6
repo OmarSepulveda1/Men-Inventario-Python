@@ -1,0 +1,159 @@
+import os
+import time
+import csv
+import shutil
+
+INVENTARIO_FILE = "inventario.csv"
+
+# ------------------- Funciones -------------------
+
+def leer_inventario():
+    try:
+        with open(INVENTARIO_FILE, "r", encoding="utf-8") as file:
+            productos = [line.strip().split(",") for line in file.readlines()]
+        return productos
+    except FileNotFoundError:
+        print("⚠️ El archivo de inventario no existe. Se creará uno nuevo.")
+        open(INVENTARIO_FILE, "w").close()
+        return []
+
+def guardar_inventario(productos):
+    try:
+        with open(INVENTARIO_FILE, "w", encoding="utf-8") as file:
+            for prod in productos:
+                file.write(",".join(prod) + "\n")
+    except Exception as e:
+        print(f"❌ Error al guardar inventario: {e}")
+
+def agregar_producto(nombre, precio, cantidad, talla):
+    try:
+        with open(INVENTARIO_FILE, "a", encoding="utf-8") as file:
+            file.write(f"{nombre},{precio},{cantidad},{talla}\n")
+        print("✅ Producto agregado correctamente.")
+    except Exception as e:
+        print(f"❌ Error al agregar producto: {e}")
+
+def buscar_producto(nombre):
+    productos = leer_inventario()
+    for prod in productos:
+        if prod[0].lower() == nombre.lower():
+            return prod
+    return None
+
+def modificar_producto(nombre, nuevo_nombre=None, nuevo_precio=None, nueva_cantidad=None, nueva_talla=None):
+    productos = leer_inventario()
+    modificado = False
+    for prod in productos:
+        if prod[0].lower() == nombre.lower():
+            if nuevo_nombre: prod[0] = nuevo_nombre
+            if nuevo_precio: prod[1] = str(nuevo_precio)
+            if nueva_cantidad: prod[2] = str(nueva_cantidad)
+            if nueva_talla: prod[3] = nueva_talla
+            modificado = True
+            break
+    if modificado:
+        guardar_inventario(productos)
+        print("✅ Producto modificado con éxito.")
+    else:
+        print("⚠️ Producto no encontrado.")
+
+def eliminar_producto(nombre):
+    productos = leer_inventario()
+    nuevos = [p for p in productos if p[0].lower() != nombre.lower()]
+    if len(productos) != len(nuevos):
+        guardar_inventario(nuevos)
+        print("✅ Producto eliminado.")
+    else:
+        print("⚠️ Producto no encontrado.")
+
+def info_archivo():
+    try:
+        size = os.path.getsize(INVENTARIO_FILE)
+        mod_time = time.ctime(os.path.getmtime(INVENTARIO_FILE))
+        print(f" Tamaño: {size} bytes")
+        print(f" Última modificación: {mod_time}")
+    except FileNotFoundError:
+        print("⚠️ El archivo aún no existe.")
+
+def crear_backup():
+    try:
+        with open(INVENTARIO_FILE, "r", encoding="utf-8") as file:
+            contenido = file.read()
+        backup_name = "inventario_backup.csv"
+        with open(backup_name, "w", encoding="utf-8") as backup:
+            backup.write(contenido)
+        print(f"✅ Backup creado: {backup_name}")
+    except Exception as e:
+        print(f"❌ Error al crear backup: {e}")
+
+# ------------------- Menú -------------------
+
+def menu():
+    while True:
+        print("\n===== * MODA XPRESS *- GESTIÓN DE INVENTARIO =====")
+        print("1. Ver inventario completo")
+        print("2. Agregar producto")
+        print("3. Buscar producto")
+        print("4. Modificar producto")
+        print("5. Eliminar producto")
+        print("6. Info del archivo")
+        print("7. Crear backup")
+        print("0. Salir")
+        
+        opcion = input("👉 Seleccione una opción: ")
+        
+        try:
+            if opcion == "1":
+                productos = leer_inventario()
+                print("\n--- Inventario ---")
+                for p in productos:
+                    print(f"{p[0]} | ${p[1]} | {p[2]} unidades | Talla: {p[3]}")
+
+            elif opcion == "2":
+                nombre = input("Nombre: ")
+                precio = float(input("Precio: "))
+                cantidad = int(input("Cantidad: "))
+                talla = input("Talla: ")
+                agregar_producto(nombre, precio, cantidad, talla)
+
+            elif opcion == "3":
+                nombre = input("Nombre del producto a buscar: ")
+                prod = buscar_producto(nombre)
+                if prod:
+                    print(f"🔎 {prod[0]} | ${prod[1]} | {prod[2]} unidades | Talla: {prod[3]}")
+                else:
+                    print("⚠️ Producto no encontrado.")
+
+            elif opcion == "4":
+                nombre = input("Nombre del producto a modificar: ")
+                nuevo_nombre = input("Nuevo nombre (Enter para mantener): ") or None
+                nuevo_precio = input("Nuevo precio (Enter para mantener): ")
+                nuevo_precio = float(nuevo_precio) if nuevo_precio else None
+                nueva_cantidad = input("Nueva cantidad (Enter para mantener): ")
+                nueva_cantidad = int(nueva_cantidad) if nueva_cantidad else None
+                nueva_talla = input("Nueva talla (Enter para mantener): ") or None
+                modificar_producto(nombre, nuevo_nombre, nuevo_precio, nueva_cantidad, nueva_talla)
+
+            elif opcion == "5":
+                nombre = input("Nombre del producto a eliminar: ")
+                eliminar_producto(nombre)
+
+            elif opcion == "6":
+                info_archivo()
+
+            elif opcion == "7":
+                crear_backup()
+
+            elif opcion == "0":
+                print(" Saliendo del sistema...Adiós 👋!")
+                break
+
+            else:
+                print("⚠️ Opción no válida.")
+
+        except Exception as e:
+            print(f"❌ Error en la operación: {e}")
+
+# ------------------- Ejecutar -------------------
+if __name__ == "__main__":
+    menu()
